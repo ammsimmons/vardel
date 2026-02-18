@@ -11,7 +11,7 @@ simulate_binary <- function(
 
   # Scenario A: Noise is mostly random error (Rater Variance is low)
   # Ratio 0.2 means: Rater Var is only 20% size of Residual Var
-  rater_resid_ratio <- 0.9
+  rater_resid_ratio <- 0.2
 
   # 2) First, obtain (object and rater) random effects 
   # must be fully crossed.
@@ -73,17 +73,21 @@ run_one_binary <- function(n_raters, n_objects,target_icc, p,iter){
 
 # Utilizing {simhelpers}
 # bundle the data-generating function and icc function together
+
 binary_sim <- simhelpers::bundle_sim(
   f_generate = simulate_binary, 
-  f_analyze = calc_vardle_icc
+  f_analyze = calc_vardel_icc
 )
 
-
+#' @param P Parameter grid
+#' @param Iter Int; # of repetitions per condition
+#' @return ICCs
+#' @export
 run_all_binary <- function(P, iter){
   res <- furrr::future_pmap(P, binary_sim, reps=iter,
       .progress = TRUE,
     .options = furrr::furrr_options(seed = TRUE,
-    globals = c("generate_data_ORE", "get_data_ORE")))
+   packages = "vardel"))
   return(res)
 }
 

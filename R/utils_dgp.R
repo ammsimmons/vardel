@@ -1,6 +1,12 @@
-
+#' @param n_raters Int
+#' @param n_objects Int
+#' @param target_icc 0-1 inclusive
+#' @param fixed_obj_var default 1
+#' @param rater_resid_ratio default 0.2
+#' @return variances/effects
+#' @export
 generate_data_ORE <- function(n_raters,n_objects,
-  target_icc, fixed_obj_var, rater_resid_ratio){
+  target_icc, fixed_obj_var = 1, rater_resid_ratio = 0.2){
 
   # Obtain variances 
   sigma_sqr <- get_data_ORE(target_icc, fixed_obj_var, rater_resid_ratio)
@@ -36,7 +42,11 @@ generate_data_ORE <- function(n_raters,n_objects,
   return(data)
 }
 
-
+#' @param target_icc Int
+#' @param fixed_obj_var default to 1
+#' @param rater_resid_ratio default 0.2
+#' @return variances/effects
+#' @export
 get_data_ORE <- function(target_icc, fixed_obj_var = 1, rater_resid_ratio) {
 
   #error check on ICC value 

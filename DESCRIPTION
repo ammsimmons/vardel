@@ -1,6 +1,6 @@
 Package: vardel
 Title: The Quick ICC(A,1) Simulation Package
-Version: 0.0.0.9000
+Version: 0.0.1.11
 Authors@R: 
     person("Aaron", "Simmons", , "amsimmons@ku.edu", role = c("aut", "cre"))
     person("Jeffrey", "Girard", ,"jmgirard@ku.edu", role = c("cre"))
@@ -9,3 +9,8 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Imports: 
+    assertthat,
+    brms,
+    lme4,
+    simhelpers

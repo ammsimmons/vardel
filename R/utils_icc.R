@@ -210,7 +210,13 @@ calc_icc <- function(x, ...) {
   UseMethod("calc_icc")
 }
 
+new_ks <- function(x, ...) {
+  structure(x, ..., class = "varde_ks")
+}
 
+new_srm <- function(x, ...) {
+  structure(x, ..., class = "varde_srm")
+}
 
 # S3 Methods --------------------------------------------------------------
 
@@ -460,8 +466,7 @@ summary.varde_icc <- function(x,
 #' * `$config`: A list containing the specified `method`, `ci`, `k` values.
 #' * `$model`: The brmsfit object created by [brms::brm()] containing the full
 #'   results of the Bayesian generalizability study.
-#' @method calc_icc data.frame
-#' @export
+
 calc_icc_old <- function(.data,
                      subject = "ObjectID",
                      rater = "RaterID",
@@ -804,8 +809,14 @@ calc_icc_old <- function(.data,
   return(out)
 }
 
-
-calc_vardle_icc <- function(.data,
+#' @param .data dataframe
+#' @param subject char
+#' @param rater char
+#' @param scores Int [0-inf]
+#' @param k int (number of raters for ICC(A,1))
+#' @return variances/effects
+#' @export
+calc_vardel_icc <- function(.data,
   subject = "ObjectID",
   rater = "RaterID",
   scores = "Score",
@@ -884,56 +895,75 @@ calc_vardle_icc <- function(.data,
   formula <- create_parse(.data, subject, rater, scores, v)
   
 
-  model_fit <- lme4::lmer(formula = formula,
-                    data = .data,
-                  REML=TRUE)
+  # model_fit <- lme4::lmer(formula = formula,
+  #                   data = .data,
+  #                 REML=TRUE)
   
-  
-  if (check_convergence(model_fit)){
-    
-  
-  #  icc_est <- computeICC_random(fit, subject, k, khat, q, v)
-  #iccs_CIs <- ICC_CIs_LME(fit, subject, rater, ci, k, khat, q)
-  #obtain confidence intervals of ICCs
+  safe_lme <- purrr::quietly(purrr::possibly(lme4::lmer, otherwise = NULL))
+
+  model_fit <- safe_lme(
+    formula = formula,
+    data = .data 
+  )
+
+
+  if ( is.null(model_fit$result ) ) {
+  # we had an error!
+    iccs = NULL 
+    error = TRUE
+  } else {
+    #  icc_est <- computeICC_random(fit, subject, k, khat, q, v)
+    #iccs_CIs <- ICC_CIs_LME(fit, subject, rater, ci, k, khat, q)
+    #obtain confidence intervals of ICCs
     ## TODO: What if one way model fit?
 
-# In vardel, we will not calculate CIs by simulation:
+    # In vardel, we will not calculate CIs by simulation:
     # instead we will use ggdist() to estimate them
-   #level <- ci
+    #level <- ci
+
+    #index lme4 model
+    model_fitted <- model_fit$result
+
     khat <- khat$Score
     Q <- q$Score
     #two way random effects
-    lme_vars <- lme4::VarCorr(model_fit)
+    lme_vars <- lme4::VarCorr(model_fitted)
     vs <- lme_vars[[subject]][1] #obtain object name
 
     #get not specified random effects variances
-    ran_eff <- attr(model_fit@flist,"names")
+    ran_eff <- attr(model_fitted@flist,"names")
     ran_eff <- ran_eff[ran_eff != subject]
     vr <- lme_vars[[ran_eff]][1]
 
     #residual/interaction variances
     #vsr <- (attr(lme4::VarCorr(model_fit), "sc"))^2
-    vsr <- sigma(model_fit)^2 
+    vsr <- sigma(model_fitted)^2 
 
 
   
     #only interested in ICC(A,1)
-    iccs <- cbind(
-        vs / (vs + vr + vsr))
+    iccs <- (vs / (vs + vr + vsr))
     
-    icc_names <- c("ICC(A,1)")
+    # icc_names <- c("ICC(A,1)")
       
-    colnames(iccs) <- paste(
-      rep(icc_names, each = v),
-      colnames(iccs),
-      sep = "__"
-    )
+    # colnames(iccs) <- paste(
+    #   rep(icc_names, each = v),
+    #   colnames(iccs),
+    #   sep = "__"
+    # )
 
-  } else {
-    stop("Model did not converge")
+    error = FALSE
+
   }
   
-  out <- iccs #ICC(A,1)
+  
+  
+  #out <- iccs #ICC(A,1)
+
+  out <- list(
+    icc = iccs, 
+    error = error
+  )
 
   return(out)
 }
