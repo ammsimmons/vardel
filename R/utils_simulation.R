@@ -73,7 +73,7 @@ run_one_binary <- function(n_raters, n_objects,target_icc, p,iter){
 
 # Utilizing {simhelpers}
 # bundle the data-generating function and icc function together
-binary_sim <- bundle_sim(
+binary_sim <- simhelpers::bundle_sim(
   f_generate = simulate_binary, 
   f_analyze = calc_vardle_icc
 )

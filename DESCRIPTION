@@ -1,11 +1,11 @@
-Package: vardle
-Title: What the Package Does (One Line, Title Case)
+Package: vardel
+Title: The Quick ICC(A,1) Simulation Package
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Aaron", "Simmons", , "amsimmons@ku.edu", role = c("aut", "cre"))
+    person("Jeffrey", "Girard", ,"jmgirard@ku.edu", role = c("cre"))
+Description: This is a lightweight version of {varde} for Aaron Simmons and his Master's Thesis. 
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
