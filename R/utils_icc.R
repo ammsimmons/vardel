@@ -909,7 +909,9 @@ calc_vardel_icc <- function(.data,
 
   if ( is.null(model_fit$result ) ) {
   # we had an error!
-    iccs = NULL 
+    iccs = NULL
+    message = model_fit$message
+    warning = model_fit$warning
     error = TRUE
   } else {
     #  icc_est <- computeICC_random(fit, subject, k, khat, q, v)
@@ -951,7 +953,8 @@ calc_vardel_icc <- function(.data,
     #   colnames(iccs),
     #   sep = "__"
     # )
-
+    message = model_fit$message
+    warning = model_fit$warning
     error = FALSE
 
   }
@@ -961,7 +964,9 @@ calc_vardel_icc <- function(.data,
   #out <- iccs #ICC(A,1)
 
   out <- list(
-    icc = iccs, 
+    icc = iccs,
+    message = message,
+    warning = warning, 
     error = error
   )
 
