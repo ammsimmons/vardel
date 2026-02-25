@@ -962,13 +962,16 @@ calc_vardel_icc <- function(.data,
   
   
   #out <- iccs #ICC(A,1)
+  #seedNum <-.data$Seed[1]
 
   out <- list(
     icc = iccs,
     message = message,
     warning = warning, 
     error = error
+    #SeedNum = seedNum
   )
+  #attr(out, "seed")
 
   return(out)
 }

@@ -1,9 +1,17 @@
-
+#' @param n_raters Number of Raters
+#' @param n_objects Number of Objets
+#' @param target_icc ICC [0,1]
+#' @param p probability
+#' @return data
+#' @export
 simulate_binary <- function(
   n_raters = 100,
   n_objects= 10,
   target_icc = 0.5,
   p=0.5,...){
+  # set seed first
+  #set.seed(SEED)
+  
   # 1) Set binary data hyper-parameters 
   
   fixed_obj_var <- 1  # assume using rater-residual ratio for now
@@ -37,7 +45,8 @@ simulate_binary <- function(
     #Score = rbinom(n(), 1, prob) #bernouli (don't do since not stochastic?)
 
 
-    Score = ifelse(eta > 0 , 1, 0) #threshold of the probit scale 
+    Score = ifelse(eta > 0 , 1, 0), #threshold of the probit scale 
+    #Seed = SEED
   )
 
   return(df)
@@ -77,7 +86,8 @@ run_one_binary <- function(n_raters, n_objects,target_icc, p,iter){
 binary_sim <- simhelpers::bundle_sim(
   f_generate = simulate_binary, 
   f_analyze = calc_vardel_icc
-)
+  #seed = "SEED" #already set in params
+) 
 
 #' @param P Parameter grid
 #' @param Iter Int; # of repetitions per condition
@@ -86,9 +96,11 @@ binary_sim <- simhelpers::bundle_sim(
 run_all_binary <- function(P, iter){
   res <- furrr::future_pmap(P, binary_sim, reps=iter,
       .progress = TRUE,
-    .options = furrr::furrr_options(seed = TRUE,
+    .options = furrr::furrr_options(seed = NULL,
    packages = "vardel"))
-  return(res)
+  
+  params$res <- res
+  return(params)
 }
 
 
