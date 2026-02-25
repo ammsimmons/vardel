@@ -82,17 +82,17 @@
 #' @family functions for chance-adjusted agreement
 #' @export
 cat_adjusted <- function(.data,
-                         object = Object,
-                         rater = Rater,
-                         score = Score,
+                         object = "ObjectID",
+                         rater = "RaterID",
+                         score = "Score",
                          approach = c("kappa","s"),
                          categories = NULL,
-                         weighting = c("identity", "linear", "quadratic", "custom"),
+                         weighting = c("identity"),
                          agreement = NULL,
-                         bootstrap = 2000,
+                         bootstrap = 0,
                          alpha_c = NULL,
                          custom_weights = NULL,
-                         warnings = TRUE) {
+                         warnings = FALSE) {
 
   # Validate inputs
   assertthat::assert_that(is.data.frame(.data) || is.matrix(.data))
@@ -209,17 +209,24 @@ cat_adjusted <- function(.data,
     )
 
   # Construct cai class output object
-  out <- new_cai(
-    approach = approach,
-    observed = boot_results$t0[seq(from = 1, to = length(approach) * 3, by = 3)],
-    expected = boot_results$t0[seq(from = 2, to = length(approach) * 3, by = 3)],
-    adjusted = boot_results$t0[seq(from = 3, to = length(approach) * 3, by = 3)],
-    boot_results = boot_results,
-    details = d,
-    call = match.call()
-  )
+  # out <- new_cai(
+  #   approach = approach,
+  #   observed = boot_results$t0[seq(from = 1, to = length(approach) * 3, by = 3)],
+  #   expected = boot_results$t0[seq(from = 2, to = length(approach) * 3, by = 3)],
+  #   adjusted = boot_results$t0[seq(from = 3, to = length(approach) * 3, by = 3)],
+  #   boot_results = boot_results,
+  #   details = d,
+  #   call = match.call()
+  # )
 
-  out
+  kap <- boot_results$t0[seq(from = 3, to = length(approach) * 3, by = 3)][1]
+  sbp <- boot_results$t0[seq(from = 3, to = length(approach) * 3, by = 3)][2]
+
+  out <- list(
+    kappa = signif(kap, digits = 3), 
+    s_bp = signif(sbp, digits = 3)
+  )
+  return(out)
 }
 
 

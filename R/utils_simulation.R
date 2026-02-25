@@ -29,7 +29,7 @@ simulate_binary <- function(
   
   # 3)) Generate datasets given the binomial model 
   # calculate Linear Predictor and Probabilities
-  df <- dat %>% tibble () %>%
+  df <- dat |> tibble () %>%
     mutate(
     # Map random effects to rows
     # u_i = object_effects[Object_ID],
@@ -83,9 +83,32 @@ run_one_binary <- function(n_raters, n_objects,target_icc, p,iter){
 # Utilizing {simhelpers}
 # bundle the data-generating function and icc function together
 
+#### analysis functions
+
+analyze_binary <- function(.data, writeFiles = FALSE){
+  #calculate traditional ICC
+  t_icc <- calc_vardel_icc(.data)
+  #calculate caa (kappa and s)
+  caa <- cat_adjusted(.data)
+
+  res <- c(t_icc,caa)
+  
+
+  if (writeFiles == TRUE){
+    args<-list(...)
+    write_csv(bind_rows(res),file = file.path(args$filename))
+  }
+
+  return(res)
+
+}
+
+
+
 binary_sim <- simhelpers::bundle_sim(
   f_generate = simulate_binary, 
-  f_analyze = calc_vardel_icc
+ # f_analyze = calc_vardel_icc
+  f_analyze = analyze_binary
   #seed = "SEED" #already set in params
 ) 
 
@@ -93,13 +116,13 @@ binary_sim <- simhelpers::bundle_sim(
 #' @param Iter Int; # of repetitions per condition
 #' @return ICCs
 #' @export
-run_all_binary <- function(P, iter){
-  res <- furrr::future_pmap(P, binary_sim, reps=iter,
+run_all_binary <- function(P, iter, writeFiles){
+  res <- furrr::future_pmap(P, binary_sim, reps=iter, writeFiles=writeFiles,
       .progress = TRUE,
     .options = furrr::furrr_options(seed = NULL,
    packages = "vardel"))
   
-  params$res <- res
+  params$result <- res
   return(params)
 }
 

@@ -944,7 +944,7 @@ calc_vardel_icc <- function(.data,
 
   
     #only interested in ICC(A,1)
-    iccs <- (vs / (vs + vr + vsr))
+    iccs <- signif((vs / (vs + vr + vsr)), digits = 3)
     
     # icc_names <- c("ICC(A,1)")
       

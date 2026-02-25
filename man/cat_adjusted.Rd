@@ -6,17 +6,17 @@
 \usage{
 cat_adjusted(
   .data,
-  object = Object,
-  rater = Rater,
-  score = Score,
+  object = "ObjectID",
+  rater = "RaterID",
+  score = "Score",
   approach = c("kappa", "s"),
   categories = NULL,
-  weighting = c("identity", "linear", "quadratic", "custom"),
+  weighting = c("identity"),
   agreement = NULL,
-  bootstrap = 2000,
+  bootstrap = 0,
   alpha_c = NULL,
   custom_weights = NULL,
-  warnings = TRUE
+  warnings = FALSE
 )
 }
 \arguments{
