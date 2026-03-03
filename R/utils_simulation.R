@@ -8,9 +8,9 @@ simulate_binary <- function(
   n_raters = 100,
   n_objects= 10,
   target_icc = 0.5,
-  p=0.5,...){
+  p=0.5){
   # set seed first
-  #set.seed(SEED)
+  
   
   # 1) Set binary data hyper-parameters 
   
@@ -85,7 +85,7 @@ run_one_binary <- function(n_raters, n_objects,target_icc, p,iter){
 
 #### analysis functions
 
-analyze_binary <- function(.data, writeFiles = FALSE){
+analyze_binary <- function(.data, filename = filename, writeFiles = FALSE){
   #calculate traditional ICC
   t_icc <- calc_vardel_icc(.data)
   #calculate caa (kappa and s)
@@ -95,8 +95,8 @@ analyze_binary <- function(.data, writeFiles = FALSE){
   
 
   if (writeFiles == TRUE){
-    args<-list(...)
-    write_csv(bind_rows(res),file = file.path(args$filename))
+   # args<-list(...)
+    write_csv(res,file = file.path(filename))
   }
 
   return(res)
@@ -104,13 +104,47 @@ analyze_binary <- function(.data, writeFiles = FALSE){
 }
 
 
+# #attempt using bundle_sim (doesn't work)
+# binary_sim <- simhelpers::bundle_sim(
+#   f_generate = simulate_binary, 
+#  # f_analyze = calc_vardel_icc
+#   f_analyze = analyze_binary
+#   #seed = "SEED" #already set in params
+# ) 
 
-binary_sim <- simhelpers::bundle_sim(
-  f_generate = simulate_binary, 
- # f_analyze = calc_vardel_icc
-  f_analyze = analyze_binary
-  #seed = "SEED" #already set in params
-) 
+#custom simulation driver 
+binary_sim <- function(n_raters, n_objects, target_icc, p, 
+  seed,filename, reps, writeFiles){
+    #set seed on each iteration
+    set.seed(seed, kind = "L'Ecuyer-CMRG") #parallel
+
+    res <- simhelpers::repeat_and_stack(reps, {
+
+
+      #DGP 
+      dat <- simulate_binary(n_raters, n_objects, target_icc, p)
+
+      #Analyze 
+
+      t_icc <- calc_vardel_icc(dat)
+      caa <- cat_adjusted(dat)
+
+      combined_mat <- c(t_icc,caa)
+
+
+    }, stack = TRUE) 
+
+  
+  if(writeFiles == TRUE){
+      write_csv(res,file = file.path(filename))
+    }
+  return(res)
+  
+
+}
+
+
+
 
 #' @param P Parameter grid
 #' @param Iter Int; # of repetitions per condition
