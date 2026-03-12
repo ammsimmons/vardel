@@ -98,7 +98,7 @@ cat_vardel_adjusted <- function(.data,
   assertthat::assert_that(is.data.frame(.data) || is.matrix(.data))
   approach <- match.arg(approach, several.ok = TRUE)
   assertthat::assert_that(is_null(categories) || is_vector(categories))
-  weighting <- match.arg(weighting)
+  #weighting <- match.arg(weighting)
   assertthat::assert_that(
     is.null(agreement) ||
     all(agreement %in% c("objects", "pairs", "kripp"))

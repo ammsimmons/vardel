@@ -1178,3 +1178,181 @@ calc_g_icc <- function(.data,
 
   return(out)
 }
+
+
+
+
+
+
+#' @param .data dataframe
+#' @param subject char
+#' @param rater char
+#' @param scores Int [0-inf]
+#' @param k int (number of raters for ICC(A,1))
+#' @return variances/effects
+#' @export
+calc_g_ordinal_icc <- function(.data,
+  subject = "ObjectID",
+  rater = "RaterID",
+  scores = "Score",
+  k = NULL
+ # ci = 0.95
+  #varde = matrix(),
+  ){
+
+  assertthat::assert_that(
+    rlang::is_null(k) || rlang::is_integerish(k, n = 1)
+  )
+
+  # assertthat::assert_that(
+  #   rlang::is_double(ci, n = 1, finite = TRUE),
+  #   ci > 0, ci < 1
+  # )
+  # assertthat::assert_that(
+  #   rlang::is_integerish(chains, n = 1, finite = TRUE),
+  #   chains >= 1
+  # )
+  
+  #make score as a factor
+  .data$Score <- as.factor(.data$Score)
+
+  # How many score variables were provided?
+  v <- length(scores)
+
+  # Create logical subject-rater matrices
+  srm <- lapply(
+    X = scores,
+    FUN = create_srm,
+    .data = .data,
+    subject = subject,
+    rater = rater
+  )
+  names(srm) <- scores
+
+  # Count the number of raters who scored each subject
+  ks <- lapply(X = srm, FUN = rowSums)
+
+  # Count the number of subjects scored by each rater
+  nk <- lapply(X = srm, FUN = colSums)
+
+  # # Remove all subjects that had no raters
+  keep <- lapply(ks, function(x) names(x[x > 0])) |>
+    unlist() |>
+    unique()
+  .data <- .data[.data[[subject]] %in% keep, ]
+
+  # # Remove all raters that had no subjects
+  keep <- lapply(nk, function(x) names(x[x > 0])) |>
+    unlist() |>
+    unique()
+  .data <- .data[.data[[rater]] %in% keep, ]
+
+  #check design of data
+  balanced <- is_balanced(.data, subject,rater)
+  complete <- is_complete(.data, subject,rater)
+  twoway <- is_twoway(.data, subject, rater)
+
+
+  # If not specified, set k as the number of unique raters
+  if (is.null(k)) {
+    k <- length(unique(.data[[rater]]))
+  }
+
+  # Calculate the harmonic mean of the number of raters per subject
+  khat <- lapply(srm, calc_khat)
+
+  # Calculate the proportion of non-overlap for raters and subjects
+  q <- lapply(srm, calc_q)
+
+  if(twoway == FALSE){
+      q <- 1/k #since sigmaR cannot be distinguished
+    } 
+
+  # Construct mixed-effects formula
+  formula <- create_parse_glmmtmb(.data, subject, rater, scores, v)
+  
+
+  # model_fit <- lme4::lmer(formula = formula,
+  #                   data = .data,
+  #                 REML=TRUE)
+  
+  safe_ordinal <- purrr::quietly(purrr::possibly(ordinal::clmm, otherwise = NULL))
+
+  model_fit <- safe_ordinal(
+    formula = formula,
+    link = "probit",
+    data = .data 
+  )
+
+
+  if ( is.null(model_fit$result ) ) {
+  # we had an error!
+    iccs = NULL
+    message = length(model_fit$message) > 0
+    warning = length(model_fit$warning) > 0
+    error = TRUE
+  } else {
+    #  icc_est <- computeICC_random(fit, subject, k, khat, q, v)
+    #iccs_CIs <- ICC_CIs_LME(fit, subject, rater, ci, k, khat, q)
+    #obtain confidence intervals of ICCs
+    ## TODO: What if one way model fit?
+
+    # In vardel, we will not calculate CIs by simulation:
+    # instead we will use ggdist() to estimate them
+    #level <- ci
+
+    #index lme4 model
+    model_fitted <- model_fit$result
+
+    khat <- khat$Score
+    Q <- q$Score
+    #two way random effects
+    glmmTMB_vars <- glmmTMB::VarCorr(model_fitted)
+    #vs <- glmmTMB_vars[[subject]][1] #obtain object name
+    vs <- glmmTMB_vars$ObjectID[1]
+
+    #get not specified random effects variances
+    #ran_eff <- attr(model_fitted@flist,"names")
+    #ran_eff <- ran_eff[ran_eff != subject]
+    #vr <- lme_vars[[ran_eff]][1]
+    vr <- glmmTMB_vars$RaterID[1]
+
+    #residual/interaction variances
+    #vsr <- (attr(lme4::VarCorr(model_fit), "sc"))^2
+    #vsr <- sigma(model_fitted)^2 
+    vsr <- 1 #constant due to probit link 
+
+
+  
+    #only interested in ICC(A,1)
+    iccs <- signif((vs / (vs + vr + vsr)), digits = 3)
+    
+    # icc_names <- c("ICC(A,1)")
+      
+    # colnames(iccs) <- paste(
+    #   rep(icc_names, each = v),
+    #   colnames(iccs),
+    #   sep = "__"
+    # )
+    message = length(model_fit$message)>0 
+    warning = length(model_fit$warning)>0  
+    error = FALSE
+
+  }
+  
+  
+  
+  #out <- iccs #ICC(A,1)
+  #seedNum <-.data$Seed[1]
+
+  out <- list(
+    g_icc = iccs,
+    g_message = message,
+    g_warning = warning, 
+    g_error = error
+    #SeedNum = seedNum
+  )
+  #attr(out, "seed")
+
+  return(out)
+}

@@ -1,6 +1,6 @@
 Package: vardel
 Title: The Quick ICC(A,1) Simulation Package
-Version: 0.0.5.01
+Version: 0.0.6.01
 Authors@R: 
     person("Aaron", "Simmons", , "amsimmons@ku.edu", role = c("aut", "cre"))
     person("Jeffrey", "Girard", ,"jmgirard@ku.edu", role = c("cre"))
@@ -15,4 +15,5 @@ Imports:
     brms,
     glmmTMB,
     lme4,
+    ordinal,
     simhelpers
