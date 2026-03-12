@@ -81,7 +81,7 @@
 #' @family functions for categorical data
 #' @family functions for chance-adjusted agreement
 #' @export
-cat_adjusted <- function(.data,
+cat_vardel_adjusted <- function(.data,
                          object = "ObjectID",
                          rater = "RaterID",
                          score = "Score",
@@ -222,11 +222,11 @@ cat_adjusted <- function(.data,
   kap <- boot_results$t0[seq(from = 3, to = length(approach) * 3, by = 3)][1]
   sbp <- boot_results$t0[seq(from = 3, to = length(approach) * 3, by = 3)][2]
 
-  out <- list(
+  res_caa <- list(
     kappa = signif(kap, digits = 3), 
     s_bp = signif(sbp, digits = 3)
   )
-  return(out)
+  return(res_caa)
 }
 
 
@@ -650,7 +650,7 @@ calc_agreement_objects <- function(codes, categories, weight_matrix) {
 
 #' @export
 cat_s <- function(.data, ...) {
-  cat_adjusted(.data, approach = "s", agreement = "objects", ...)
+  cat_vardel_adjusted(.data, approach = "s", agreement = "objects", ...)
 }
 
 # Worker function to calculate the S score and its components
@@ -695,7 +695,7 @@ calc_chance_s <- function(codes, categories, weight_matrix) {
 
 #' @export
 cat_kappa <- function(.data, ...) {
-  cat_adjusted(.data, approach = "kappa", agreement = "objects", ...)
+  cat_vardel_adjusted(.data, approach = "kappa", agreement = "objects", ...)
 }
 
 # Calculate the kappa coefficient and its components

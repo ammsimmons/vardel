@@ -5,8 +5,8 @@
 #' @return data
 #' @export
 simulate_binary <- function(
-  n_raters = 100,
-  n_objects= 10,
+  n_raters = 30,
+  n_objects= 100,
   target_icc = 0.5,
   p=0.5){
   # set seed first
@@ -14,18 +14,19 @@ simulate_binary <- function(
   
   # 1) Set binary data hyper-parameters 
   
-  fixed_obj_var <- 1  # assume using rater-residual ratio for now
+  #fixed_obj_var <- 1  # assume using rater-residual ratio for now
   intercept <- qnorm(p) # probit transformation 
+  #intercept <- p # 50% on the logit scale 
 
   # Scenario A: Noise is mostly random error (Rater Variance is low)
-  # Ratio 0.2 means: Rater Var is only 20% size of Residual Var
-  rater_resid_ratio <- 0.2
+  # Ratio 0.2 means: Rater Var is 5x less than Object Variance
+   ROR <- 0.20
 
   # 2) First, obtain (object and rater) random effects 
   # must be fully crossed.
  
-  dat <- generate_data_ORE(n_raters,n_objects,
-    target_icc, fixed_obj_var, rater_resid_ratio)
+  dat <- generate_data_ROR(n_raters,n_objects,
+    target_icc, ROR)
   
   # 3)) Generate datasets given the binomial model 
   # calculate Linear Predictor and Probabilities
@@ -36,16 +37,18 @@ simulate_binary <- function(
     # v_j = rater_effects[Rater_ID],
     
     # Linear Predictor (probit scale)
-    eta = intercept + u_i + v_j + Error, # don't add error? 
+    eta = intercept + u_i + v_j + Error, # latent score 
     
-    # Probability scale (inverse probit)
-    # prob = plogis(eta), 
+    # Probability scale (probit link)
+    #prob = pnorm(eta), 
     
     # Generate Binary Rating
     #Score = rbinom(n(), 1, prob) #bernouli (don't do since not stochastic?)
 
+    
+    Score = ifelse(eta > 0 , 1, 0) #threshold on latent scale 
 
-    Score = ifelse(eta > 0 , 1, 0), #threshold of the probit scale 
+    #Score = eta
     #Seed = SEED
   )
 
@@ -88,10 +91,12 @@ run_one_binary <- function(n_raters, n_objects,target_icc, p,iter){
 analyze_binary <- function(.data, filename = filename, writeFiles = FALSE){
   #calculate traditional ICC
   t_icc <- calc_vardel_icc(.data)
+  #calculate proposed gICC 
+  g_icc <- calc_g_icc(.data)
   #calculate caa (kappa and s)
   caa <- cat_adjusted(.data)
 
-  res <- c(t_icc,caa)
+  res <- c(t_icc,g_icc,caa)
   
 
   if (writeFiles == TRUE){
@@ -116,7 +121,8 @@ analyze_binary <- function(.data, filename = filename, writeFiles = FALSE){
 binary_sim <- function(n_raters, n_objects, target_icc, p, 
   seed,filename, reps, writeFiles){
     #set seed on each iteration
-    set.seed(seed, kind = "L'Ecuyer-CMRG") #parallel
+    set.seed(seed, kind = "L'Ecuyer-CMRG", 
+    normal.kind = "Inversion", sample.kind = "Rejection") #parallel
 
     res <- simhelpers::repeat_and_stack(reps, {
 
@@ -127,17 +133,20 @@ binary_sim <- function(n_raters, n_objects, target_icc, p,
       #Analyze 
 
       t_icc <- calc_vardel_icc(dat)
-      caa <- cat_adjusted(dat)
+      g_icc <- calc_g_icc(dat)
+      caa <- cat_vardel_adjusted(dat)
 
-      combined_mat <- c(t_icc,caa)
+      combined_mat <- c(t_icc,g_icc,caa)
 
 
     }, stack = TRUE) 
 
   
   if(writeFiles == TRUE){
-      write_csv(res,file = file.path(filename))
-    }
+     #w_res <- as.data.frame(res)
+     #write_csv(w_res,file = file.path(filename))
+    saveRDS(res, file = file.path(filename))
+  }
   return(res)
   
 

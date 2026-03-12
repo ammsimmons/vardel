@@ -5,11 +5,17 @@
 #' @param rater_resid_ratio default 0.2
 #' @return variances/effects
 #' @export
-generate_data_ORE <- function(n_raters,n_objects,
-  target_icc, fixed_obj_var = 1, rater_resid_ratio = 0.2){
+generate_data_ROR<- function(n_raters,n_objects,
+  target_icc, ROR = 0.006){
 
   # Obtain variances 
-  sigma_sqr <- get_data_ORE(target_icc, fixed_obj_var, rater_resid_ratio)
+  sigma_sqr <- get_data_ROR(target_icc, ROR)
+
+  # sigma_sqr <- list(
+  #   var_object = 30,
+  #   var_rater = 0.2,
+  #   var_residual = 1.0
+  # )
   
   # Generate effects 
   obj_effects   <- rnorm(
@@ -42,17 +48,18 @@ generate_data_ORE <- function(n_raters,n_objects,
   return(data)
 }
 
-#' @param target_icc Int
-#' @param fixed_obj_var default to 1
-#' @param rater_resid_ratio default 0.2
-#' @return variances/effects
-#' @export
-get_data_ORE <- function(target_icc, fixed_obj_var = 1, rater_resid_ratio) {
+# ' @param target_icc Int
+# ' @param fixed_obj_var default to 1
+# ' @param rater_resid_ratio default 0.2
+# ' @return variances/effects
+# ' @export
+get_data_ORE <- function(target_icc, ROR) {
 
   #error check on ICC value 
     if(target_icc >= 1 | target_icc <=0) {
       stop("ICC must be between 0 and 1")
     }
+  
   
   #calculate noise(combined rater and residual variance)
   # TODO: CHANGE RATIO to OBJECT/RATER VARIANCE
@@ -76,6 +83,42 @@ get_data_ORE <- function(target_icc, fixed_obj_var = 1, rater_resid_ratio) {
     var_object = var_object, 
     var_rater = rater_resid_ratio, 
     var_residual = 1)
+  
+  return(out)
+}
+
+# This attempt at setting variance assumes fixed error variance of 1
+# and a ratio of object to ratio variance (ROR)
+# Default assumes no rater variance (perfect ICC)
+
+#' @param target_icc Int
+#' @param ROR rater object ratio: default 0.2 (i.e. Object Variance 5x greater than Rater Var)
+#' @return variances/effects
+#' @export
+get_data_ROR <- function(target_icc, ROR = 0.2) {
+
+  #error check on ICC value 
+    if(target_icc >= 1 | target_icc <=0) {
+      stop("ICC must be between 0 and 1")
+    }
+  
+  #Set variance parameter components
+  var_error <- 1 # probit residual variance
+  #formaula: ICC = O / (O + ROR + E)
+  var_object <- (target_icc * var_error) / (1-target_icc * (1 + ROR))
+
+
+  if (var_object <= 0) {
+  stop("Target ICC and Ratio are mathematically impossible with this error variance.")
+}
+  var_rater <- var_object * ROR
+
+
+  #return variances 
+  out <- list(
+    var_object = var_object, 
+    var_rater = var_rater, 
+    var_residual = var_error)
   
   return(out)
 }
